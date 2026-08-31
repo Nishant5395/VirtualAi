@@ -421,6 +421,8 @@ jobs:
       # 4. Build frontend
       - name: Build frontend
         working-directory: frontend
+        env:
+         VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
         run: npm run build
 
       # 5. Configure AWS credentials
