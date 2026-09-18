@@ -11,9 +11,20 @@ import morgan from "morgan"
 const port =process.env.PORT
 
 const app=express()
+const allowedOrigins = (process.env.FRONTEND_URL || "")
+    .split(",")
+    .map(o => o.trim().replace(/\/$/, ""))
+    .filter(Boolean)
+
 app.use(cors({
-    origin:process.env.FRONTEND_URL,
-    credentials:true
+    origin: (origin, callback) => {
+        // no origin = curl, server-to-server, health checks
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true)
+        }
+        return callback(null, false)
+    },
+    credentials: true
 }))
 app.use(morgan("dev"))
 app.use(cookieParser())

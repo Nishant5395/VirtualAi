@@ -169,6 +169,65 @@
 #           --distribution-id \
 #           ${{secrets.CLOUDFRONT_DISTRIBUTION_ID}} \
 #           --paths "/*"
+ # ==================================
+  # FRONTEND
+  # ==================================
+
+  #  deploy-frontend:
+  #   needs: deploy-backend
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+
+  #     # 1. Checkout repository
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+
+  #     # 2. Setup Node.js
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
+  #         cache: npm
+  #         cache-dependency-path: frontend/package-lock.json
+
+  #     # 3. Install dependencies
+  #     - name: Install dependencies
+  #       working-directory: frontend
+  #       run: npm ci
+
+  #     # 4. Build frontend
+  #     - name: Build frontend
+  #       working-directory: frontend
+  #       env:
+  #        VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+  #        VITE_SERVER_URL: ${{ secrets.VITE_SERVER_URL }}
+  #       run: npm run build
+
+  #     # 5. Configure AWS credentials
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: ${{ env.AWS_REGION }}
+
+  #     # 6. Deploy frontend to S3
+  #     - name: Deploy frontend to S3
+  #       env:
+  #         S3_BUCKET: ${{ secrets.S3_BUCKET }}
+  #       run: |
+  #         test -n "$S3_BUCKET" || (echo "S3_BUCKET secret is empty" && exit 1)
+
+  #         aws s3 sync frontend/dist \
+  #           "s3://$S3_BUCKET" \
+  #           --delete
+
+  #     # 7. Deployment complete
+  #     - name: Deployment completed
+  #       run: |
+  #         echo "VirtualAI deployment completed successfully."
+
 
 name: VirtualAI Deployment
 
@@ -390,22 +449,18 @@ jobs:
             --service "$ECS_SERVICE" \
             --force-new-deployment
 
-
   # ==================================
-  # FRONTEND
+  # FRONTEND (build check only, Render hosts the site)
   # ==================================
 
-  deploy-frontend:
+  build-frontend:
     needs: deploy-backend
     runs-on: ubuntu-latest
 
     steps:
-
-      # 1. Checkout repository
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -413,39 +468,13 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      # 3. Install dependencies
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
 
-      # 4. Build frontend
       - name: Build frontend
         working-directory: frontend
         env:
-         VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-         VITE_SERVER_URL: ${{ secrets.VITE_SERVER_URL }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_SERVER_URL: ${{ secrets.VITE_SERVER_URL }}
         run: npm run build
-
-      # 5. Configure AWS credentials
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      # 6. Deploy frontend to S3
-      - name: Deploy frontend to S3
-        env:
-          S3_BUCKET: ${{ secrets.S3_BUCKET }}
-        run: |
-          test -n "$S3_BUCKET" || (echo "S3_BUCKET secret is empty" && exit 1)
-
-          aws s3 sync frontend/dist \
-            "s3://$S3_BUCKET" \
-            --delete
-
-      # 7. Deployment complete
-      - name: Deployment completed
-        run: |
-          echo "VirtualAI deployment completed successfully."
